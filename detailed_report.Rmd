@@ -1,0 +1,123 @@
+---
+params:
+  level: "Region"
+  level_value: "Central"
+title: "`r paste0(params$level, ': ', params$level_value)`"
+subtitle: "Detailed SSP Report"
+author: "Alex Axthelm"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+ html_document:
+   number_sections: true
+   toc: false
+   toc_float: true
+   code_folding: hide
+ pdf_document:
+   number_sections: true
+   toc: true
+---
+
+```{r, Libraries, cache = FALSE}
+library("tidyverse")
+library("ggridges")
+library("DT")
+library("lubridate")
+```
+
+```{r, "Prepare Dates", cache = FALSE}
+period_start <- if_else(
+  month(today()) < 9,
+  ymd(paste(year(today()) - 1, "0701")),
+  ymd(paste(year(today()), "0701"))
+  )
+```
+
+```{r, "Prepare 21CS Color Palette"}
+tfcs_colors <- c(
+  nine = rgb(254, 184, 34, maxColorValue = 255),
+  ten = rgb(255, 224, 83, maxColorValue = 255),
+  eleven = rgb(179, 246, 139, maxColorValue = 255),
+  twelve = rgb(114, 206, 231, maxColorValue = 255),
+  Neutral = rgb(232, 226, 214, maxColorValue = 255),
+  Neutral2 = rgb(113, 113, 113, maxColorValue = 255),
+  Plan = rgb(179, 8, 56, maxColorValue = 255),
+  Prepare = rgb(247, 142, 30, maxColorValue = 255),
+  Pay = rgb(115, 193, 103, maxColorValue = 255),
+  Primary = rgb(81, 97, 172, maxColorValue = 255),
+  Primary2 = rgb(35, 62, 153, maxColorValue = 255)
+  )
+
+che_colors <- c(
+  marsala = "#955251",
+  tangerine = "#F79256",
+  custard = "#EAD988",
+  mint = "#9DB276",
+  dusk_blue = "#7DA1BF",
+  glacier_gray = "#C6CBCC"
+  )
+```
+
+```{r, "Prepare SSP descriptions"}
+dim_ssp <- tibble::tribble(
+  ~ssp, ~grade, ~long_name, ~short_name,
+01, 09, "Create a Graduation Plan", "Grad Plan",
+02, 09, "Participate in an Extracurricular or Service Activity", "Extracurricular", #nolint
+03, 09, "Watch \"Paying for College 101\"", "Paying 101",
+04, 10, "Take a Career Interests Assessment", "Career Interests",
+05, 10, "Get Workplace Experience", "Workplace",
+06, 10, "Estimate the Costs of College", "Estimate Costs",
+07, 11, "Visit a College Campus", "Campus Visit",
+08, 11, "Take a College Entrance Exam (ACT/SAT)", "Entrance Exam",
+09, 11, "Search for Scholarships", "Scholarships",
+10, 12, "Submit Your College Application", "Application",
+11, 12, "Watch \"College Success 101\"", "Success 101",
+12, 12, "File Your FAFSA", "FAFSA"
+  )
+```
+
+```{r, "Prepare Datafile", cache = FALSE}
+data_file <- file.path("ssp_record.csv")
+stopifnot(file.exists(data_file))
+file_pull_date <- date(file.mtime(data_file))
+```
+
+```{r, "Read Data", cache = TRUE, cache.extra = file_pull_date}
+record_data <- read_csv(
+  file = data_file,
+  na = c("", "NA", "NULL"),
+  col_type = cols(
+    hs_grad_year = col_integer(),
+    school = col_factor(levels = NULL),
+    address = col_character(),
+    city = col_character(),
+    state = col_factor(levels = NULL),
+    zip = col_integer(),
+    school_type = col_factor(levels = NULL),
+    corporation = col_factor(levels = NULL),
+    che_region = col_factor(levels = NULL),
+    county = col_factor(levels = NULL),
+    ssp_01 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_02 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_03 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_04 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_05 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_06 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_07 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_08 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_09 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_10 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_11 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    ssp_12 = col_date(format = "%Y-%m-%d %H:%M:%OS"),
+    isir_version = col_integer()
+    )
+  )
+```
+
+# School-Level Activity
+
+This is a plot for `r params$level_value` `r params$level_value`.
+Data was accurate as of `r file_pull_date`
+
+```{r}
+glimpse(record_data)
+```
