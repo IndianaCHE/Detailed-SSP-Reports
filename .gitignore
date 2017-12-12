@@ -1,0 +1,6 @@
+*.csv
+*.png
+*.html
+/*_cache/
+Thumbs.db
+

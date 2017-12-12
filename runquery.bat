@@ -1,5 +1,16 @@
-cd /d S:/Research&Analysis/Users/Alex/2017-11-20-GHarrell_DATA-123_Marion_county_Completions/
+@echo off
+setlocal enabledelayedexpansion
+SET "location=S:\Research&Analysis\Users\Alex\Requests\2017-11-20-GHarrell_DATA-123_Marion_county_Completions"
+SET queryfile=!location!\county_detailed_SSPs.sql
+SET rawdatafile=!location!\record_data.csv
+SET datafile=!location!\record_data.csv
 
-sqlcmd -S CHESQLP01FW,3467 -i "S:\Research&Analysis\Users\Alex\Requests\2017-11-20-GHarrell_DATA-123_Marion_county_Completions\county_detailed_SSPs.sql" -o "S:\Research&Analysis\Users\Alex\Requests\2017-11-20-GHarrell_DATA-123_Marion_county_Completions\data.csv" -s"," -W
- 
-|findstr /v /c:"---" "S:\Research&Analysis\Users\Alex\Requests\2017-11-20-GHarrell_DATA-123_Marion_county_Completions\data.csv" "S:\Research&Analysis\Users\Alex\Requests\2017-11-20-GHarrell_DATA-123_Marion_county_Completions\data-nodash.csv" 
+ECHO We're working with !location!
+
+ECHO Running !queryfile!, and storing results as !datafile!
+sqlcmd -S CHESQLP01FW,3467 -i "!queryfile!" -o "!rawdatafile!" -s"," -W
+
+ECHO cleaning!datafile!
+findstr /v /c:"---" "!rawdatafile!" > "!datafile!" 
+
+endlocal
