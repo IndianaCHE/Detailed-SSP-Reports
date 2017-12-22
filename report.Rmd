@@ -1,0 +1,230 @@
+
+---
+params:
+  level: "CHE Region"
+  level_value: "Central"
+title: "`r paste0(params$level, ': ', params$level_value)`"
+subtitle: "Detailed SSP Report"
+author: "Alex Axthelm"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+ html_document:
+   number_sections: true
+   toc: false
+   toc_float: true
+   code_folding: hide
+ pdf_document:
+   number_sections: true
+   toc: true
+---
+
+```{r "knitr setup", include = FALSE, cache = FALSE, eval = TRUE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  echo = FALSE,
+  message = FALSE,
+  warning = TRUE,
+  out.width = "100%",
+  autodep = TRUE,
+  strip.white = TRUE,
+  cache.comments = FALSE,
+  results = "hold"
+  )
+```
+
+```{r, Libraries, cache = FALSE, include = FALSE}
+library("drake")
+library("git2r")
+```
+
+**Warning:** This is a draft version, and although I've attempted to ensure
+accuracy, the data reported here may not be entirely accurate. If you suspect
+that there may be problems, please let me know at
+[AAxthelm@che.in.gov](mailto:AAxthelm@che.in.gov), and reference commit
+`r git2r::repository() %>% git2r::head() %>% git2r::branch_target() %>% substr(1, 6)`
+
+Data was accurate as of **`r date(file_pull_time)`**
+
+```{r code_for_local_development, include = FALSE, eval = FALSE}
+config <- rmarkdown::yaml_front_matter(
+  file.path("report.Rmd")
+  )
+params <- config$params
+```
+
+```{r}
+loadd(record_data)
+loadd(current_senior_cohort)
+loadd(dim_ssp)
+loadd(period_start)
+loadd(dt_extensions)
+```
+
+```{r}
+student_counts <- record_data %>%
+  group_by(hs_grad_year, UQ(as.name(params$level))) %>%
+  count()
+```
+
+# Time Series
+
+```{r}
+timeseries_data <- record_data %>%
+  filter(UQ(as.name(params$level)) == params$level_value) %>%
+  select(
+    hs_grad_year,
+    one_of(params$level),
+    contains("ssp"),
+    contains("all")
+    ) %>%
+  tidyr::gather(
+    key = ssp, value = date,
+    -hs_grad_year,
+    -UQ(as.name(params$level))
+    ) %>%
+  filter(!is.na(date)) %>%
+  left_join(dim_ssp, by = c("ssp" = "ssp_code")) %>%
+  separate(
+    col = ssp,
+    into = c("name", "number"),
+    sep = "_",
+    convert = FALSE
+    ) %>%
+  mutate(
+    word_grade = case_when(
+      grade == 9 ~ "nine",
+      grade == 10 ~ "ten",
+      grade == 11 ~ "eleven",
+      grade == 12 ~ "twelve",
+      1 == 1 ~ "Other"
+      ),
+    activity_this_year = (current_senior_cohort - hs_grad_year + 12) == grade
+    ) %>%
+  filter(
+    (current_senior_cohort - hs_grad_year + 12) >= grade
+    ) %>%
+  filter(activity_this_year | name == "all") %>%
+  mutate(
+    activity = if_else(
+      activity_this_year,
+      short_name,
+      paste(scales::ordinal(grade), "grade Activities")
+      )
+    ) %>%
+  group_by(
+    hs_grad_year,
+    UQ(as.name(params$level)),
+    word_grade,
+    activity,
+    name,
+    date
+    ) %>%
+  summarise(done_today = n()) %>%
+  arrange(date) %>%
+  mutate(done_this_year = cumsum(done_today)) %>%
+  left_join(student_counts, by = c("hs_grad_year", params$level))
+```
+
+```{r}
+cumsumplot <- timeseries_data %>%
+  # filter(hs_grad_year == 2018) %>%
+  filter(date >= period_start) %>%
+  filter(name == "all") %>%
+  ggplot(
+    aes(
+      x = date,
+      y = done_this_year / n,
+      color = word_grade,
+      group = activity,
+      )
+    ) +
+  geom_line(size = 1.5) +
+  scale_x_date(
+    limits = c(period_start, NA),
+    date_breaks = "2 months",
+    minor_breaks = NULL
+    ) +
+  scale_y_continuous(
+    limits = c(0, 1),
+    labels = scales::percent
+    ) +
+  labs(
+    title = "Cumulative SSP completion (All Activites)",
+    x = "Date",
+    y = "Activities Completed",
+    color = "Activity Grade Level"
+    ) +
+  facet_wrap("hs_grad_year", ncol = 2, labeller = global_labeller) +
+  scale_alpha_manual(values = c("ssp" = 1, "all" = 0.6)) +
+  scale_color_tfcs() + scale_fill_tfcs() + theme_tfcs()
+print(cumsumplot)
+```
+
+# School-Level Activity
+
+```{r}
+summarise_ssps <- function(data){
+  summarise(
+    data,
+    n = n(),
+    ssp_01 = mean(!is.na(ssp_01)),
+    ssp_02 = mean(!is.na(ssp_02)),
+    ssp_03 = mean(!is.na(ssp_03)),
+    ssp_04 = mean(!is.na(ssp_04)),
+    ssp_05 = mean(!is.na(ssp_05)),
+    ssp_06 = mean(!is.na(ssp_06)),
+    ssp_07 = mean(!is.na(ssp_07)),
+    ssp_08 = mean(!is.na(ssp_08)),
+    ssp_09 = mean(!is.na(ssp_09)),
+    ssp_10 = mean(!is.na(ssp_10)),
+    ssp_11 = mean(!is.na(ssp_11)),
+    ssp_12 = mean(!is.na(ssp_12)),
+    FAFSA = mean(!is.na(isir_version)),
+    )
+}
+```
+
+```{r}
+summary_table <- record_data %>%
+  filter(UQ(as.name(params$level)) == params$level_value) %>%
+  # group_by(hs_grad_year, UQ(as.name(params$level))) %>%
+  group_by(hs_grad_year, School) %>%
+  summarise_ssps() %>%
+  mutate_at(vars(starts_with("SSP"), "FAFSA"), funs(scales::percent))
+```
+
+## Cohort 2018 Breakdown
+
+```{r}
+DT::datatable(
+  filter(summary_table, hs_grad_year == 2018),
+  extensions = dt_extensions
+  )
+```
+
+## Cohort 2019 Breakdown
+
+```{r}
+DT::datatable(
+  filter(summary_table, hs_grad_year == 2019),
+  extensions = dt_extensions
+  )
+```
+
+## Cohort 2020 Breakdown
+
+```{r}
+DT::datatable(
+  filter(summary_table, hs_grad_year == 2020),
+  extensions = dt_extensions
+  )
+```
+
+## Cohort 2021 Breakdown
+
+```{r}
+DT::datatable(
+  filter(summary_table, hs_grad_year == 2021),
+  extensions = dt_extensions
+  )
+```
