@@ -8,6 +8,7 @@ library("lubridate")
 library("extrafont")
 library("ggCHE")
 library("rlang")
+library("stringr")
 
 setup_parameters_plan <- drake::drake_plan(
   current_senior_cohort = 2018,
@@ -97,10 +98,26 @@ data_file_plan <- drake::drake_plan(strings_in_dots = "filenames",
 data_cleaning_plan <- drake::drake_plan(strings_in_dots = "literals",
 record_data = raw_record_data %>%
   mutate(
-    all_9th = pmax(UQ(as.name("ssp_01")), UQ(as.name("ssp_02")), UQ(as.name("ssp_03"))),
-    all_10th = pmax(UQ(as.name("ssp_04")), UQ(as.name("ssp_05")), UQ(as.name("ssp_06"))),
-    all_11th = pmax(UQ(as.name("ssp_07")), UQ(as.name("ssp_08")), UQ(as.name("ssp_09"))),
-    all_12th = pmax(UQ(as.name("ssp_10")), UQ(as.name("ssp_11")), UQ(as.name("ssp_12")))
+    all_9th = pmax(
+      UQ(as.name("ssp_01")),
+      UQ(as.name("ssp_02")),
+      UQ(as.name("ssp_03"))
+      ),
+    all_10th = pmax(
+      UQ(as.name("ssp_04")),
+      UQ(as.name("ssp_05")),
+      UQ(as.name("ssp_06"))
+      ),
+    all_11th = pmax(
+      UQ(as.name("ssp_07")),
+      UQ(as.name("ssp_08")),
+      UQ(as.name("ssp_09"))
+      ),
+    all_12th = pmax(
+      UQ(as.name("ssp_10")),
+      UQ(as.name("ssp_11")),
+      UQ(as.name("ssp_12"))
+      )
     )
   )
 
@@ -123,20 +140,42 @@ region_list <- c(
   "West",
   "Central"
   )
-region_files <- paste0("./detailed_reports/SSPs-CHE-Region_", region_list, ".html")
 
-reaport_region_plan <- drake::drake_plan(strings_in_dots = "filenames",
-  file_targets = TRUE,
-  `detailed_reports/SSPs-CHE-Region_Central.html` = rmarkdown::render(
-    input = "./report.Rmd",
-    output_file = "./detailed_reports/SSPs-CHE-Region_Central.html",
+report_deps <- drake::knitr_deps("report.Rmd")
+
+# file_template_plan <- drake::drake_plan(strings_in_dots = "filenames",
+file_template_plan <- data.frame(
+  target = "report_template",
+  command = as.list(c("report.Rmd", report_deps))
+    ) %>%
+  group_by(target) %>%
+  summarise(command = paste(command, collapse = ", "))
+
+render_plan_template <- drake::drake_plan(strings_in_dots = "literals",
+  file_targets = FALSE,
+  `detailed_reports/SSPs` = rmarkdown::render(
+    input = report_template,
+    # input = "'report.Rmd'",
+    output_file = str_replace_all(
+      string = "detailed_reports/SSPs_..LEVEL.._..LEVELVALUE...html",
+      pattern = " ", replacement = "-"
+      ),
     output_format = "html_document",
-    params = list(level = "CHE Region", level_value = "Central"),
+    params = list(level = "..LEVEL..", level_value = "..LEVELVALUE.."),
     quiet = TRUE
     )
   )
 
-
+report_region_plan <- evaluate_plan(
+  render_plan_template,
+  rules = list(
+    ..LEVEL.. = "CHE Region",
+    ..LEVELVALUE.. = region_list
+    )
+  ) %>%
+  mutate(target = paste0("./", target, ".html")) %>%
+  mutate(target = str_replace_all(target, pattern = " ", replacement = "-")) %>%
+  mutate(target = drake::as_drake_filename(target))
 
 master_plan <- bind_rows(
   setup_parameters_plan,
@@ -146,6 +185,8 @@ master_plan <- bind_rows(
   data_file_plan,
   data_cleaning_plan,
   labeller_plan,
+  file_template_plan,
   report_region_plan
    )
-vis_drake_graph(master_plan)
+
+vis_drake_graph(drake_config(master_plan))
