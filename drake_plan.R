@@ -141,21 +141,10 @@ region_list <- c(
   "Central"
   )
 
-report_deps <- drake::knitr_deps("report.Rmd")
-
-# file_template_plan <- drake::drake_plan(strings_in_dots = "filenames",
-file_template_plan <- data.frame(
-  target = "report_template",
-  command = as.list(c("report.Rmd", report_deps))
-    ) %>%
-  group_by(target) %>%
-  summarise(command = paste(command, collapse = ", "))
-
 render_plan_template <- drake::drake_plan(strings_in_dots = "literals",
   file_targets = FALSE,
   `detailed_reports/SSPs` = rmarkdown::render(
-    input = report_template,
-    # input = "'report.Rmd'",
+    input = 'report.Rmd', #nolint: filename
     output_file = str_replace_all(
       string = "detailed_reports/SSPs_..LEVEL.._..LEVELVALUE...html",
       pattern = " ", replacement = "-"
@@ -185,7 +174,7 @@ master_plan <- bind_rows(
   data_file_plan,
   data_cleaning_plan,
   labeller_plan,
-  file_template_plan,
+  # file_template_plan,
   report_region_plan
    )
 
