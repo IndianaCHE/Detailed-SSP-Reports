@@ -3,17 +3,16 @@ DECLARE @CurrentSeniorCohort int;
 SET @CurrentSeniorCohort = 2018;
 
 SELECT DISTINCT
---s.StudentID,
+s.StudentID,
 s.HSGradYear AS hs_grad_year,
-REPLACE(sch.Name, ',', '') AS School,
-REPLACE(sch.Address, ',', '') AS Address,
-REPLACE(sch.City, ',', '') AS City,
-REPLACE(sch.State, ',', '') AS State,
-sch.ZipCode AS Zip,
-REPLACE(sch.SchoolType, ',', '') AS [School Type],
-REPLACE(sch.Corporation, ',', '') AS Corporation,
-REPLACE(region.ch_Region, ',', '') AS [CHE Region],
-REPLACE(cnty.ch_county, ',', '') AS County,
+s.HighSchoolID AS high_school_id,
+s.MiddleSchoolID AS middle_school_id,
+tfc.Approved,
+tfc.IsExpelled,
+tfc.PledgeViolation,
+tfc.IsSubmitted,
+tfc.SubmittedDateTime,
+CASE WHEN s.UserID IS NOT NULL THEN 1 ELSE 0 END AS scholartrack_account,
 ssp01.submit_date AS ssp_01,
 ssp02.submit_date AS ssp_02,
 ssp03.submit_date AS ssp_03,
@@ -30,9 +29,6 @@ iv.VersionID AS isir_version
 FROM CHE_ScholarTrack.dbo.Students AS s WITH (NOLOCK)
 INNER JOIN CHE_ScholarTrack.dbo.TFCApplications AS tfc WITH (NOLOCK) ON (s.StudentID = tfc.StudentID)
 --LEFT JOIN #tmp_ssp_completion AS ssp WITH (NOLOCK) ON (s.StudentID = ssp.StudentID)
-LEFT JOIN CHE_ScholarTrack.dbo.Schools AS sch WITH (NOLOCK) ON (CASE WHEN HSGradYear >= @CurrentSeniorCohort + 4 THEN s.MiddleSchoolID ELSE s.HighSchoolID END = sch.SchoolID)
-LEFT JOIN SEAS..NewRegionCountyMatch AS cnty  WITH (NOLOCK) ON cnty.in_CountyId=sch.County
-LEFT JOIN SEAS..NewRegionCountyMatch AS region  WITH (NOLOCK) ON region.in_RegionId=sch.Region
 LEFT JOIN (SELECT DISTINCT StudentID, min(SubmitDate) AS submit_date FROM CHE_ScholarTrack.dbo.StudentSSP9GraduationPlans WITH (NOLOCK) GROUP BY StudentID) AS ssp01 ON (tfc.StudentID = ssp01.StudentID)
 LEFT JOIN (SELECT DISTINCT StudentID, min(SubmitDate) AS submit_date FROM CHE_ScholarTrack.dbo.StudentSSP9Activities WITH (NOLOCK) GROUP BY StudentID) AS ssp02 ON (tfc.StudentID = ssp02.StudentID)
 LEFT JOIN (SELECT DISTINCT StudentID, min(SubmitDate) AS submit_date FROM CHE_ScholarTrack.dbo.StudentSSP9PayingForColleges WITH (NOLOCK) GROUP BY StudentID) AS ssp03 ON (tfc.StudentID = ssp03.StudentID)
@@ -60,7 +56,5 @@ LEFT JOIN (
 	) AS latestversion 
 	WHERE allversions.VersionID = latestversion.VersionID
 ) AS iv ON (s.StudentID = iv.StudentID AND s.HSGradYear = iv.Year)
-/* end latest version */ 
-WHERE tfc.IsExpelled = 0
-AND tfc.Approved = 1
-AND s.HSGradYear >= @CurrentSeniorCohort
+/* end latest version */
+WHERE s.HSGradYear >= 2015
