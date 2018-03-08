@@ -24,3 +24,5 @@ setup_parameters_plan <- drake_plan(
   current_senior_cohort = 2018,
   period_start = lubridate::ymd("20170701")
   )
+
+na_spec <- c("na", "NA", "", "NULL", "null")
