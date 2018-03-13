@@ -1,4 +1,3 @@
-
 ---
 params:
   level: "CHE Region"
@@ -37,14 +36,6 @@ library("drake")
 library("git2r")
 ```
 
-**Warning:** This is a draft version, and although I've attempted to ensure
-accuracy, the data reported here may not be entirely accurate. If you suspect
-that there may be problems, please let me know at
-[AAxthelm@che.in.gov](mailto:AAxthelm@che.in.gov), and reference commit
-`r git2r::repository() %>% git2r::head() %>% git2r::branch_target() %>% substr(1, 6)`
-
-Data was accurate as of **`r date(file_pull_time)`**
-
 ```{r code_for_local_development, include = FALSE, eval = FALSE}
 config <- rmarkdown::yaml_front_matter(
   file.path("report.Rmd")
@@ -58,7 +49,17 @@ loadd(current_senior_cohort)
 loadd(dim_ssp)
 loadd(period_start)
 loadd(dt_extensions)
+loadd(global_labeller)
+loadd(file_pull_time)
 ```
+
+**Warning:** This is a draft version, and although I've attempted to ensure
+accuracy, the data reported here may not be entirely accurate. If you suspect
+that there may be problems, please let me know at
+[AAxthelm@che.in.gov](mailto:AAxthelm@che.in.gov), and reference commit
+*`r git2r::repository() %>% git2r::head() %>% git2r::branch_target() %>% substr(1, 6)`*
+
+Data was accurate as of **`r date(file_pull_time)`**
 
 ```{r}
 student_counts <- record_data %>%
