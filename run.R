@@ -22,7 +22,7 @@ master_config <- drake_config(master_plan)
 vis_drake_graph(master_config)
 print(master_plan)
 
-# make(
-#   plan = master_plan,
-#   jobs = n_jobs
-#   )
+make(
+  plan = master_plan,
+  jobs = n_jobs
+  )

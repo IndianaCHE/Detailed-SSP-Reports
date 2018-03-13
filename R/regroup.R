@@ -1,41 +1,43 @@
 suppressPackageStartupMessages(library("drake"))
 suppressPackageStartupMessages(library("tidyverse"))
 
-loadd(unique_school_codes)
 loadd(combined_levels_list)
-foob <- readd(schools_table_clean) %>% filter(County == "DeKalb") %>%
-  select("County", "Corporation", "School") %>%
-  tidyr::gather() %>%
-  filter(complete.cases(.)) %>%
-  select("value")
-foo <- combined_levels_list %>% inner_join(foob, by = "value") %>% distinct()
-foo_schools <- foo$SchoolID %>% unlist()
+# foob <- readd(schools_table_clean) %>% filter(County == "DeKalb") %>%
+#   select("County", "Corporation", "School") %>%
+#   tidyr::gather(key = "level", value = "value") %>%
+#   filter(complete.cases(.)) %>%
+#   distinct()
+# foo <- combined_levels_list %>% inner_join(foob, by = "value") %>% distinct()
 
 split_schools_plan_template <- drake_plan(strings_in_dots = "literals",
-  high_school_code_data = {
-    combined_levels_list #this is here to introduce a logical dependency
-    raw_record_data %>%
-      filter_at(
-        .vars = "high_school_id",
-        .vars_predicate = function(x) x == TK_school_code_TK)
-  }
+  school_codes = combined_levels_list %>%
+    filter_at(
+      .vars = "refcode",
+      .vars_predicate = any_vars(. == "TK_refcode_TK")
+      ) %>%
+    select("SchoolID") %>%
+    unnest(),
+  high_school_data = raw_record_data %>%
+    inner_join(
+      UQ(as.name(paste0("school_codes_", "TK_refcode_TK"))),
+      by = c("high_school_id" = "SchoolID")
+      ),
+  middle_school_data = raw_record_data %>%
+    inner_join(
+      UQ(as.name(paste0("school_codes_", "TK_refcode_TK"))),
+      by = c("middle_school_id" = "SchoolID")
+      )
   )
 
+# See https://github.com/ropensci/drake/issues/235#issuecomment-363124440
 split_schools_plan <- evaluate_plan(
   plan = split_schools_plan_template,
-  rules = list("TK_school_code_TK" = foo_schools)
+  rules = list(
+    "TK_refcode_TK" = combined_levels_list[["refcode"]]
+    ),
+  expand = TRUE
   )
 
-recombine_schools_plan <- foo %>%
-  transmute(
-    target = paste(level, value, sep = "_"),
-    command = UQ(as.name("SchoolID")) %>%
-      unlist() %>%
-      paste0("high_school_code_data", "_", ., collapse = ", ") %>%
-      paste0("bind_rows(", ., ")")
-    )
-
 regroup_file_plan <- bind_rows(
-  split_schools_plan,
-  recombine_schools_plan,
+  split_schools_plan
   )

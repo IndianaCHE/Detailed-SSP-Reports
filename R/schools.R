@@ -24,7 +24,8 @@ schools_plan <- drake_plan(strings_in_dots = "literals",
     col_types = school_spec),
   schools_table_clean = schools_table_raw %>%
     mutate_if(is_character, str_trim) %>%
-    arrange(UQ(as.name(("SchoolID")))),
+    arrange(UQ(as.name("SchoolID"))) %>%
+    filter_at("County", any_vars(. == "DeKalb"))
   )
 
 schools_summary_plan <- drake_plan(strings_in_dots = "literals",
@@ -46,11 +47,25 @@ schools_summary_plan <- drake_plan(strings_in_dots = "literals",
   state_list = schools_table_clean %>% summarize_schools("State"),
   combined_levels_list = bind_rows(
     schools_list, corp_list, region_list, county_list, state_list
-    ),
-  unique_school_codes = schools_table_clean %>%
-    pull("SchoolID") %>%
-    unique() %>%
-    sort()
+    ) %>%
+  mutate(clean_value = str_replace_all(
+      string = value,
+      pattern = ":|\\+|\\-|\\*|\\^|\\(|\\)|\\[|\\]|^_|\\\"",
+      replacement = " "
+      )) %>%
+  mutate(refcode = paste0(
+      level, "_",
+      if_else(level %in% c("School", "Corporation"),
+        abbreviate(clean_value),
+        clean_value
+        )
+      )) %>%
+  mutate(refcode = str_replace_all(
+      string = refcode,
+      pattern = " ",
+      replacement = ""
+      )) %>%
+  select(-clean_value)
   )
 
 schools_file_plan <- bind_rows(
@@ -59,4 +74,4 @@ schools_file_plan <- bind_rows(
   schools_summary_plan
   )
 
-make(schools_file_plan, jobs = n_jobs)
+make(schools_file_plan, jobs = 1)
