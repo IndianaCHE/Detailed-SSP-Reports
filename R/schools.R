@@ -25,7 +25,7 @@ schools_plan <- drake_plan(strings_in_dots = "literals",
   schools_table_clean = schools_table_raw %>%
     mutate_if(is_character, str_trim) %>%
     arrange(UQ(as.name(("SchoolID")))),
-)
+  )
 
 schools_summary_plan <- drake_plan(strings_in_dots = "literals",
   summarize_schools = function(.data, column){
@@ -35,9 +35,9 @@ schools_summary_plan <- drake_plan(strings_in_dots = "literals",
         value = column,
         "SchoolID" = "SchoolID"
         ) %>%
-      group_by(value) %>%
-      summarize(schools = list(UQ(as.name("SchoolID")))) %>%
-      mutate(level = column)
+    group_by(value) %>%
+    summarize(schools = list(UQ(as.name("SchoolID")))) %>%
+    mutate(level = column)
   },
   schools_list = schools_table_clean %>% summarize_schools("School"),
   corp_list = schools_table_clean %>% summarize_schools("Corporation"),
@@ -46,7 +46,11 @@ schools_summary_plan <- drake_plan(strings_in_dots = "literals",
   state_list = schools_table_clean %>% summarize_schools("State"),
   combined_levels_list = bind_rows(
     schools_list, corp_list, region_list, county_list, state_list
-    )
+    ),
+  unique_school_codes = schools_table_clean %>%
+    pull("SchoolID") %>%
+    unique() %>%
+    sort()
   )
 
 schools_file_plan <- bind_rows(

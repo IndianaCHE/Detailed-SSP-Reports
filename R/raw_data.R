@@ -36,6 +36,6 @@ raw_data_plan <- drake_plan(
     ),
   )
 
-data_file_plan <- bind_rows(
+raw_data_file_plan <- bind_rows(
   raw_data_plan
   )

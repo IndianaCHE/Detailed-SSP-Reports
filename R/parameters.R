@@ -1,6 +1,6 @@
 suppressPackageStartupMessages(library("drake"))
 suppressPackageStartupMessages(library("lubridate"))
-suppressPackageStartupMessages(library("git2r"))
+stopifnot(requireNamespace("git2r", quietly = TRUE))
 
 senior_cohort <- function(
   .date,
