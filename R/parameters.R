@@ -1,6 +1,6 @@
 suppressPackageStartupMessages(library("drake"))
 suppressPackageStartupMessages(library("lubridate"))
-
+suppressPackageStartupMessages(library("git2r"))
 
 senior_cohort <- function(
   .date,
@@ -34,4 +34,10 @@ na_spec <- c("na", "NA", "", "NULL", "null")
 n_jobs <- parallel::detectCores() - 1
 
 parameters_file_plan <- drake_plan(strings_in_dots = "literals",
-  )
+  git_commit_hash_short = git2r::repository() %>%
+    git2r::head(x = .) %>%
+    git2r::branch_target(branch = .) %>%
+    substr(start =  0, stop = 6) %>%
+    toupper(.)
+  ) %>%
+mutate(trigger = "always")
