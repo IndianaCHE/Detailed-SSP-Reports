@@ -25,7 +25,7 @@ geolocation_data_plan <- drake_plan(strings_in_dots = "literals",
       messaging = FALSE,
       source = geo_location_source
       ),
-    schools_table_location = bind_cols(address_data, geo_data)
+    schools_table_location = bind_cols(address_data, geo_data) %>% as.tibble()
     )
 
 geolocation_file_plan <- bind_rows(
