@@ -1,9 +1,14 @@
-suppressPackageStartupMessages(library("tidyverse"))
 suppressPackageStartupMessages(library("drake"))
+suppressPackageStartupMessages(library("tidyverse"))
 
 loadd(unique_school_codes)
 loadd(combined_levels_list)
-foo <- combined_levels_list %>% filter(value == "Boone")
+foob <- readd(schools_table_clean) %>% filter(County == "DeKalb") %>%
+  select("County", "Corporation", "School") %>%
+  tidyr::gather() %>%
+  filter(complete.cases(.)) %>%
+  select("value")
+foo <- combined_levels_list %>% inner_join(foob, by = "value") %>% distinct()
 foo_schools <- foo$SchoolID %>% unlist()
 
 split_schools_plan_template <- drake_plan(strings_in_dots = "literals",
