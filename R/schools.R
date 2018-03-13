@@ -32,11 +32,11 @@ schools_summary_plan <- drake_plan(strings_in_dots = "literals",
     stopifnot(is_character(column))
     .data %>%
       select(
-        value = column,
+        "value" = column,
         "SchoolID" = "SchoolID"
         ) %>%
-    group_by(value) %>%
-    summarize(schools = list(UQ(as.name("SchoolID")))) %>%
+    group_by_at("value") %>%
+    summarize_at(.vars = "SchoolID", .funs = list) %>%
     mutate(level = column)
   },
   schools_list = schools_table_clean %>% summarize_schools("School"),
