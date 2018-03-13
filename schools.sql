@@ -1,3 +1,4 @@
+SET NOCOUNT ON;
 SELECT DISTINCT
 sch.SchoolID,
 REPLACE(sch.Name, ',', '') AS School,
