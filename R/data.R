@@ -1,6 +1,6 @@
-library("magrittr")
-library("drake")
-library("readr")
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("drake"))
+suppressPackageStartupMessages(library("readr"))
 
 
 raw_data_plan <- drake_plan(
@@ -36,7 +36,6 @@ raw_data_plan <- drake_plan(
     ),
   )
 
-master_plan <- bind_rows(
-  master_plan,
+data_file_plan <- bind_rows(
   raw_data_plan
   )

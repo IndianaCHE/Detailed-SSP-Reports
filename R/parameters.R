@@ -1,3 +1,7 @@
+suppressPackageStartupMessages(library("drake"))
+suppressPackageStartupMessages(library("lubridate"))
+
+
 senior_cohort <- function(
   .date,
   period_start = period_start(.date)
@@ -26,3 +30,8 @@ setup_parameters_plan <- drake_plan(
   )
 
 na_spec <- c("na", "NA", "", "NULL", "null")
+
+n_jobs <- parallel::detectCores() - 1
+
+parameters_file_plan <- drake_plan(strings_in_dots = "literals",
+  )
