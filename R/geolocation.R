@@ -28,13 +28,6 @@ geolocation_data_plan <- drake_plan(strings_in_dots = "literals",
     schools_table_location = bind_cols(address_data, geo_data)
     )
 
-google_api_key <- read_lines("google_maps_api_key.txt")
-register_google(
-  key = google_api_key,
-  account_type = "standard",
-  second_limit = 5
-  )
-
 geolocation_file_plan <- bind_rows(
   geolocation_source_plan,
   geolocation_data_plan
