@@ -15,6 +15,8 @@ source("R/analysis.R")
 master_plan <- bind_rows(master_plan, analysis_file_plan)
 source("R/geolocation.R")
 master_plan <- bind_rows(master_plan, geolocation_file_plan)
+# source("R/middle_school_analysis.R")
+# master_plan <- bind_rows(master_plan, middle_school_analysis_file_plan)
 
 master_plan <- master_plan %>%
   mutate(trigger = fct_explicit_na(trigger, na_level = default_trigger()))
