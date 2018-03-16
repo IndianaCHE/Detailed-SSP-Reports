@@ -40,8 +40,7 @@ parameters_always_plan <- drake_plan(strings_in_dots = "literals",
     substr(start =  0, stop = 6) %>%
     toupper(.),
   today_date = lubridate::today()
-  ) %>%
-mutate(trigger = "always")
+  )
 
 dates_derived_plan <- drake_plan(strings_in_dots = "literals",
   find_rollover_date = function(.date, rollover_day = "July 1st"){
@@ -53,7 +52,7 @@ dates_derived_plan <- drake_plan(strings_in_dots = "literals",
       #otherwise, use the candidate
       candidate_day
       )
-      return(rollover_date)
+    return(rollover_date)
   },
   rollover_date = find_rollover_date(
     .date = today_date,
@@ -62,15 +61,28 @@ dates_derived_plan <- drake_plan(strings_in_dots = "literals",
   last_year = today_date - dyears(1),
   two_weeks_ago = today_date - dweeks(2),
   rollover_last_year = find_rollover_date(
-    .date = today_date,
+    .date = last_year,
     rollover_day = "July 1"
     ),
   next_rollover = rollover_date + dyears(1),
-  days_to_next_rollover = next_rollover - today_date
-  ) %>%
-  mutate(trigger = default_trigger())
+  days_to_next_rollover = next_rollover - today_date,
+  seq_this_year = tibble(
+    date = seq(from = rollover_date, to = next_rollover, by = 1)
+    ) %>%
+  mutate(day_count = rownames(.)),
+  seq_last_year = tibble(
+    date = seq(from = rollover_last_year, to = rollover_date, by = 1)
+    ) %>%
+  mutate(day_count = rownames(.)),
+  )
 
 parameters_file_plan <- bind_rows(
   parameters_always_plan,
   dates_derived_plan
   )
+
+if (!quickrun){
+parameters_file_plan %>%
+  mutate(trigger = "always") %>%
+  make(plan = ., jobs = 1, verbose = 0)
+}

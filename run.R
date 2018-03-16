@@ -2,6 +2,9 @@
 suppressPackageStartupMessages(library("tidyverse"))
 suppressPackageStartupMessages(library("drake"))
 
+# Enable running through setup stuff once per day.
+quickrun = cached(today_date) && readd(today_date) == lubridate::today()
+
 master_plan <- NULL
 source("R/parameters.R")
 master_plan <- bind_rows(master_plan, parameters_file_plan)
@@ -15,13 +18,11 @@ source("R/analysis.R")
 master_plan <- bind_rows(master_plan, analysis_file_plan)
 source("R/geolocation.R")
 master_plan <- bind_rows(master_plan, geolocation_file_plan)
-# source("R/middle_school_analysis.R")
-# master_plan <- bind_rows(master_plan, middle_school_analysis_file_plan)
+source("R/middle_school_analysis.R")
+master_plan <- bind_rows(master_plan, ms_analysis_file_plan)
 
-master_plan <- master_plan %>%
-  mutate(trigger = fct_explicit_na(trigger, na_level = default_trigger()))
 master_config <- drake_config(master_plan)
-vis_drake_graph(master_config)
+vis_drake_graph(master_config, targets_only = TRUE)
 print(master_plan)
 
 make(

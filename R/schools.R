@@ -65,7 +65,9 @@ schools_summary_plan <- drake_plan(strings_in_dots = "literals",
       pattern = " ",
       replacement = ""
       )) %>%
-  select(-clean_value)
+  filter_at(.vars = "value", .vars_predicate = any_vars(!is.na(.))) %>%
+  select(-clean_value) %>%
+  filter_at("level", any_vars(. == "State"))
   )
 
 schools_file_plan <- bind_rows(
@@ -74,4 +76,6 @@ schools_file_plan <- bind_rows(
   schools_summary_plan
   )
 
-make(schools_file_plan, jobs = 1)
+if (!quickrun){
+make(schools_file_plan, jobs = 1, verbose = 0)
+}

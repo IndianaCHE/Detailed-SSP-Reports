@@ -36,6 +36,12 @@ raw_data_plan <- drake_plan(
     ),
   )
 
+clean_data_plan <- drake_plan(strings_in_dots = "literals",
+  clean_record_data = raw_record_data %>%
+    mutate_if(is.POSIXct, date)
+  )
+
 raw_data_file_plan <- bind_rows(
-  raw_data_plan
+  raw_data_plan,
+  clean_data_plan,
   )
