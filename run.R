@@ -1,5 +1,6 @@
 # This file is the main file to execute to create the detailed SSP Reports
-suppressPackageStartupMessages(library("tidyverse"))
+# suppressPackageStartupMessages(library("tidyverse"))
+library("tidyverse")
 suppressPackageStartupMessages(library("drake"))
 
 # Enable running through setup stuff once per day.
@@ -20,6 +21,8 @@ source("R/geolocation.R")
 master_plan <- bind_rows(master_plan, geolocation_file_plan)
 source("R/middle_school_analysis.R")
 master_plan <- bind_rows(master_plan, ms_analysis_file_plan)
+source("R/high_school_analysis.R")
+master_plan <- bind_rows(master_plan, hs_analysis_file_plan)
 
 master_config <- drake_config(master_plan)
 vis_drake_graph(master_config, targets_only = TRUE)

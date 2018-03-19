@@ -4,13 +4,16 @@ suppressPackageStartupMessages(library("tidyverse"))
 loadd(combined_levels_list)
 
 split_schools_plan_template <- drake_plan(strings_in_dots = "literals",
-  school_codes = combined_levels_list %>%
+  level_info = combined_levels_list %>%
     filter_at(
       .vars = "refcode",
       .vars_predicate = any_vars(. == "TK_refcode_TK")
-      ) %>%
+      ),
+  school_codes = level_info_TK_refcode_TK %>%
     select("SchoolID") %>%
     unnest(),
+  level = level_info_TK_refcode_TK %>% pull(level),
+  value = level_info_TK_refcode_TK %>% pull(value),
   hs_data = clean_record_data %>%
     inner_join(
       UQ(as.name(paste0("school_codes_", "TK_refcode_TK"))),

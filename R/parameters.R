@@ -39,7 +39,8 @@ parameters_always_plan <- drake_plan(strings_in_dots = "literals",
     git2r::branch_target(branch = .) %>%
     substr(start =  0, stop = 6) %>%
     toupper(.),
-  today_date = lubridate::today()
+  today_date = lubridate::today(),
+  current_senior_cohort = 2018L
   )
 
 dates_derived_plan <- drake_plan(strings_in_dots = "literals",
@@ -70,11 +71,18 @@ dates_derived_plan <- drake_plan(strings_in_dots = "literals",
     date = seq(from = rollover_date, to = next_rollover, by = 1)
     ) %>%
   mutate(day_count = rownames(.)),
-  seq_last_year = tibble(
-    date = seq(from = rollover_last_year, to = rollover_date, by = 1)
-    ) %>%
-  mutate(day_count = rownames(.)),
-  )
+seq_last_year = tibble(
+  date = seq(from = rollover_last_year, to = rollover_date, by = 1)
+  ) %>%
+mutate(day_count = rownames(.)),
+current_class_standings = tibble(
+  grade_number = seq(from = 12L, to = 7L, by = -1L),
+  grade_name = c("Senior", "Junior" ,"Sophomore", "Fresh", "8th Grade", "7th grade"),
+  grade_cohort = seq(from = current_senior_cohort, to = current_senior_cohort + 5, by = 1L)
+  ),
+last_year_class_standings = current_class_standings %>%
+  mutate(grade_cohort = grade_cohort - 1L)
+)
 
 parameters_file_plan <- bind_rows(
   parameters_always_plan,
