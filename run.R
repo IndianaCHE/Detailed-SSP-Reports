@@ -1,10 +1,9 @@
 # This file is the main file to execute to create the detailed SSP Reports
-# suppressPackageStartupMessages(library("tidyverse"))
 library("tidyverse")
-suppressPackageStartupMessages(library("drake"))
+ibrary("drake")
 
 # Enable running through setup stuff once per day.
-quickrun = cached(today_date) && readd(today_date) == lubridate::today()
+quickrun <- cached(today_date) && readd(today_date) == lubridate::today()
 
 master_plan <- NULL
 source("R/parameters.R")
