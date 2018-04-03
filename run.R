@@ -16,15 +16,15 @@ source("R/regroup.R")
 master_plan <- bind_rows(master_plan, regroup_file_plan)
 source("R/analysis.R")
 master_plan <- bind_rows(master_plan, analysis_file_plan)
-# source("R/geolocation.R")
-# master_plan <- bind_rows(master_plan, geolocation_file_plan)
-# source("R/middle_school_analysis.R")
-# master_plan <- bind_rows(master_plan, ms_analysis_file_plan)
+source("R/geolocation.R")
+master_plan <- bind_rows(master_plan, geolocation_file_plan)
+source("R/middle_school_analysis.R")
+master_plan <- bind_rows(master_plan, ms_analysis_file_plan)
 source("R/high_school_analysis.R")
 master_plan <- bind_rows(master_plan, hs_analysis_file_plan)
 
 master_config <- drake_config(master_plan)
-vis_drake_graph(master_config, targets_only = TRUE
+vis_drake_graph(master_config, targets_only = TRUE)
 if (length(missed(master_config))){
   print(missed(master_config))
 } else {
