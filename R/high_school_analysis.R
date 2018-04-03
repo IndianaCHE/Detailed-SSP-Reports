@@ -76,7 +76,7 @@ high_school_combine <- tibble(
 
 combined_excel_plan <- drake_plan(strings_in_dots = "literals",
   write_xlsx(
-    path = file_out("ssp_summary.xlsx"),
+    path = file_out("Reports/ssp_summary.xlsx"),
     x = list(
       "This Year" = this_year_all_ssps,
       "Last Year" = last_year_all_ssps

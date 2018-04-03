@@ -4,6 +4,7 @@
 .drake/
 Thumbs.db
 Old_report/
+reports/
 
 # from https://github.com/github/gitignore/blob/master/R.gitignore
 

@@ -33,6 +33,8 @@ na_spec <- c("na", "NA", "", "NULL", "null")
 
 n_jobs <- parallel::detectCores() - 1
 
+reports_dir <- file.path("reports")
+
 parameters_always_plan <- drake_plan(strings_in_dots = "literals",
   git_commit_hash_short = git2r::repository() %>%
     git2r::head(x = .) %>%
@@ -77,8 +79,19 @@ seq_last_year = tibble(
 mutate(day_count = rownames(.)),
 current_class_standings = tibble(
   grade_number = seq(from = 12L, to = 7L, by = -1L),
-  grade_name = c("Senior", "Junior" ,"Sophomore", "Fresh", "8th Grade", "7th grade"),
-  grade_cohort = seq(from = current_senior_cohort, to = current_senior_cohort + 5, by = 1L)
+  grade_name = c(
+    "Senior",
+    "Junior",
+    "Sophomore",
+    "Fresh",
+    "8th Grade",
+    "7th grade"
+    ),
+  grade_cohort = seq(
+    from = current_senior_cohort,
+    to = current_senior_cohort + 5,
+    by = 1L
+    )
   ),
 last_year_class_standings = current_class_standings %>%
   mutate(grade_cohort = grade_cohort - 1L)
