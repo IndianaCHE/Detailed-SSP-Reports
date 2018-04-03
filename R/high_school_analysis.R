@@ -1,30 +1,20 @@
 suppressPackageStartupMessages(library("drake"))
 suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("writexl"))
 
 loadd(combined_levels_list)
 
 hs_functions_plan <- drake_plan(strings_in_dots = "literals",
-
   summarize_ssps = function(.data, .date){
     .data %>%
       group_by_at(c("grade_number", "grade_name", "hs_grad_year")) %>%
-      summarize(
-        n = n(),
-        ssp_01 = sum(as.numeric(ssp_01 <= .date), na.rm = TRUE),
-        ssp_02 = sum(as.numeric(ssp_02 <= .date), na.rm = TRUE),
-        ssp_03 = sum(as.numeric(ssp_03 <= .date), na.rm = TRUE),
-        ssp_04 = sum(as.numeric(ssp_04 <= .date), na.rm = TRUE),
-        ssp_05 = sum(as.numeric(ssp_05 <= .date), na.rm = TRUE),
-        ssp_06 = sum(as.numeric(ssp_06 <= .date), na.rm = TRUE),
-        ssp_07 = sum(as.numeric(ssp_07 <= .date), na.rm = TRUE),
-        ssp_08 = sum(as.numeric(ssp_08 <= .date), na.rm = TRUE),
-        ssp_09 = sum(as.numeric(ssp_09 <= .date), na.rm = TRUE),
-        ssp_10 = sum(as.numeric(ssp_10 <= .date), na.rm = TRUE),
-        ssp_11 = sum(as.numeric(ssp_11 <= .date), na.rm = TRUE),
-        ssp_12 = sum(as.numeric(ssp_12 <= .date), na.rm = TRUE),
+      mutate(n = n()) %>%
+      group_by_at("n", .add = TRUE) %>%
+      summarize_at(
+        .vars = vars(contains("ssp_")),
+        .funs = funs(sum(as.numeric(. <= .date), na.rm = TRUE))
         )
   }
-
   )
 
 high_school_plan_template <- drake_plan(strings_in_dots = "literals",
@@ -44,24 +34,52 @@ high_school_plan_template <- drake_plan(strings_in_dots = "literals",
       . / n
       )
     ) %>%
-  mutate(
-    level = level_TK_refcode_TK,
-    value = value_TK_refcode_TK
-    ), 
-  ssps_last_year = hs_data_TK_refcode_TK %>%
-    inner_join(
-      last_year_class_standings,
-      by = c("hs_grad_year" = "grade_cohort")
-      ) %>%
-  filter_at(
-    .vars = "grade_number",
-    .vars_predicate = any_vars(. >= 9L)
+  mutate(refcode = "TK_refcode_TK") %>%
+  left_join(combined_levels_list, by = "refcode") %>%
+  select("level", "value", everything()) %>%
+  select(-one_of("SchoolID", "refcode")),
+ssps_last_year = hs_data_TK_refcode_TK %>%
+  inner_join(
+    last_year_class_standings,
+    by = c("hs_grad_year" = "grade_cohort")
     ) %>%
-  summarize_ssps(.data = ., .date = last_year) %>%
-  mutate_at(
-    .vars = vars(contains("ssp_")),
-    .funs = funs(
-      . / n
+filter_at(
+  .vars = "grade_number",
+  .vars_predicate = any_vars(. >= 9L)
+  ) %>%
+summarize_ssps(.data = ., .date = last_year) %>%
+mutate_at(
+  .vars = vars(contains("ssp_")),
+  .funs = funs(
+    . / n
+    )
+  ) %>%
+mutate(refcode = "TK_refcode_TK") %>%
+left_join(combined_levels_list, by = "refcode") %>%
+select("level", "value", everything()) %>%
+select(-one_of("SchoolID", "refcode"))
+)
+
+high_school_combine <- tibble(
+  target = c("this_year_all_ssps", "last_year_all_ssps"),
+  command = c(
+    paste0(
+      "bind_rows(", paste0("ssps_this_year", "_",
+        combined_levels_list[["refcode"]], collapse = ", "), ")"
+      ),
+    paste0(
+      "bind_rows(", paste0("ssps_last_year", "_",
+        combined_levels_list[["refcode"]], collapse = ", "), ")"
+      )
+    )
+  )
+
+combined_excel_plan <- drake_plan(strings_in_dots = "literals",
+  write_xlsx(
+    path = file_out("ssp_summary.xlsx"),
+    x = list(
+      "This Year" = this_year_all_ssps,
+      "Last Year" = last_year_all_ssps
       )
     )
   )
@@ -74,5 +92,8 @@ high_school_plan <- evaluate_plan(
   )
 
 hs_analysis_file_plan <- bind_rows(
-  high_school_plan
+  hs_functions_plan,
+  high_school_plan,
+  high_school_combine,
+  combined_excel_plan
   )

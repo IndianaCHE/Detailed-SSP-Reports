@@ -12,14 +12,12 @@ split_schools_plan_template <- drake_plan(strings_in_dots = "literals",
   school_codes = level_info_TK_refcode_TK %>%
     select("SchoolID") %>%
     unnest(),
-  level = level_info_TK_refcode_TK %>% pull(level),
-  value = level_info_TK_refcode_TK %>% pull(value),
-  hs_data = clean_record_data %>%
+  hs_data = scholar_data %>%
     inner_join(
       UQ(as.name(paste0("school_codes_", "TK_refcode_TK"))),
       by = c("high_school_id" = "SchoolID")
       ),
-  ms_data = clean_record_data %>%
+  ms_data = scholar_data %>%
     inner_join(
       UQ(as.name(paste0("school_codes_", "TK_refcode_TK"))),
       by = c("middle_school_id" = "SchoolID")

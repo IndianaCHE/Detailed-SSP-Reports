@@ -38,7 +38,19 @@ raw_data_plan <- drake_plan(
 
 clean_data_plan <- drake_plan(strings_in_dots = "literals",
   clean_record_data = raw_record_data %>%
-    mutate_if(is.POSIXct, date)
+    mutate_if(is.POSIXct, date),
+  scholar_data = clean_record_data %>%
+    filter_at(
+      "Approved",
+      all_vars(. == TRUE)
+      ) %>%
+    filter_at(
+      c(
+        "PledgeViolation",
+        "IsExpelled"
+        ),
+      all_vars(. == FALSE)
+      )
   )
 
 raw_data_file_plan <- bind_rows(
